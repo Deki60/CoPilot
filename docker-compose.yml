@@ -18,9 +18,10 @@ services:
 
     copilot-frontend:
         build:
-            context: https://github.com/Deki60/CoPilot.git#Dev
-            dockerfile: frontend/Dockerfile
+            context: ./frontend
+            dockerfile: Dockerfile
         image: deki60/copilot-frontend:dev
+
         environment:
             - SERVER_HOST=${SERVER_HOST:-localhost} 
         ports:
