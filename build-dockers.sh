@@ -25,7 +25,7 @@ function build_backend() {
 
 # Build du frontend avec ton fork GitHub
 function build_frontend() {
-  echo "🚀 Build frontend (version=${version})"
+  echo "Build frontend (version=${version})"
   cd "$currDir/frontend" || exit
   
   # Copie du fichier .env.example en .env si non présent
