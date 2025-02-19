@@ -1,126 +1,12 @@
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import HTTPException
-from fastapi import Query
-from fastapi import Security
-from loguru import logger
+from fastapi import APIRouter, Depends, HTTPException, Security
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from starlette.status import HTTP_401_UNAUTHORIZED
-
 from app.auth.utils import AuthHandler
-
-# App specific imports
-from app.customers.schema.customers import AgentModel
-from app.customers.schema.customers import AgentsResponse
-from app.customers.schema.customers import CustomerFullResponse
-from app.customers.schema.customers import CustomerMetaRequestBody
-from app.customers.schema.customers import CustomerMetaResponse
-from app.customers.schema.customers import CustomerRequestBody
-from app.customers.schema.customers import CustomerResponse
-from app.customers.schema.customers import CustomersResponse
+from app.customers.schema.customers import CustomerRequestBody, CustomerResponse
 from app.db.db_session import get_db
-from app.db.universal_models import Agents
 from app.db.universal_models import Customers
-from app.db.universal_models import CustomersMeta
-from app.healthchecks.agents.schema.agents import AgentHealthCheckResponse
-from app.healthchecks.agents.schema.agents import TimeCriteriaModel
-from app.healthchecks.agents.services.agents import velociraptor_agents_healthcheck
-from app.healthchecks.agents.services.agents import wazuh_agents_healthcheck
-from app.middleware.license import is_feature_enabled
 
 customers_router = APIRouter()
-
-
-def verify_admin(user):
-    """
-    Verify if the user is an admin.
-
-    Args:
-        user: The user object to be verified.
-
-    Raises:
-        HTTPException: If the user is not an admin.
-
-    Returns:
-        None
-    """
-    if not user.is_admin:
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-
-
-async def verify_unique_customer_code(
-    session: AsyncSession,
-    customer: CustomerRequestBody,
-):
-    """
-    Verifies if the given customer code is unique in the database.
-
-    Args:
-        session (AsyncSession): The database session.
-        customer (CustomerRequestBody): The customer data to be verified.
-
-    Raises:
-        HTTPException: If a customer with the same customer code already exists in the database.
-    """
-    stmt = select(Customers).filter(Customers.customer_code == customer.customer_code)
-    result = await session.execute(stmt)
-    existing_customer = result.scalars().first()
-    if existing_customer:
-        raise HTTPException(
-            status_code=400,
-            detail="Customer with this customer_code already exists",
-        )
-
-
-async def mssp_license_check(session: AsyncSession):
-    """
-    Check if the current number of provisioned customers is within the allowed range based on the MSSP license type.
-    - First customer is free (no license check)
-    - MSSP Unlimited: No limit
-    - MSSP 10: Up to 10 customers (0-9 current customers)
-    - MSSP 5: Up to 5 customers (0-4 current customers)
-    """
-    stmt = select(Customers)
-    result = await session.execute(stmt)
-    customers = result.scalars().all()
-    provisioned_customers = len(customers)
-    logger.info(f"Provisioned customers: {provisioned_customers}")
-
-    # Skip license check for first customer
-    if provisioned_customers == 0:
-        return
-
-    error_message = "You have reached the maximum number of customers allowed for your license type. Please upgrade your license to provision more customers."
-
-    # Try most permissive license first
-    try:
-        await is_feature_enabled("MSSP Unlimited", session, message=error_message)
-        return  # License check passed
-    except HTTPException as e:
-        if e.status_code != 400:
-            raise e
-
-    # Check MSSP 10 license - adding new customer must not exceed 10
-    if provisioned_customers < 10:
-        try:
-            await is_feature_enabled("MSSP 10", session, message=error_message)
-            return  # License check passed
-        except HTTPException as e:
-            if e.status_code != 400:
-                raise e
-
-    # Check MSSP 5 license - adding new customer must not exceed 5
-    if provisioned_customers < 5:
-        try:
-            await is_feature_enabled("MSSP 5", session, message=error_message)
-            return  # License check passed
-        except HTTPException as e:
-            if e.status_code != 400:
-                raise e
-
-    raise HTTPException(status_code=400, detail=error_message)
-
 
 @customers_router.post(
     "",
@@ -142,17 +28,15 @@ async def create_customer(
     Returns:
         CustomerResponse: The response containing the created customer data.
     """
-    # Modification effectuée ici : suppression des vérifications de licence et d'unicité
-    logger.info(f"Creating new customer: {customer}")
+    # Suppression des vérifications de licence et d'unicité
     new_customer = Customers(**customer.dict())
     session.add(new_customer)
     await session.commit()
-    # Enrichissement : construction d'un récapitulatif des champs créés
-    customer_summary = customer.dict()
+
     return CustomerResponse(
         customer=customer,
         success=True,
-        message="Customer created successfully. Summary: " + str(customer_summary),
+        message="Customer created successfully",
     )
 
 
