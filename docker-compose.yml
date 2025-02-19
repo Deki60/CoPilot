@@ -2,14 +2,13 @@ version: "2"
 
 services:
     copilot-backend:
-        build:
-            context: https://github.com/Deki60/CoPilot.git#Dev
-            dockerfile: backend/Dockerfile
-        image: deki60/copilot-backend:dev
+        image: ghcr.io/Deki60/copilot-backend:latest
+        # Expose the Ports for Graylog Alerting and Docs
         ports:
             - "5000:5000"
         volumes:
             - ./data/copilot-backend-data/logs:/opt/logs
+            # Mount the copilot.db file to persist the database
             - ./data/data:/opt/copilot/backend/data
         env_file: .env
         depends_on:
@@ -17,13 +16,9 @@ services:
         restart: always
 
     copilot-frontend:
-        build:
-            context: ./frontend
-            dockerfile: Dockerfile
-        image: deki60/copilot-frontend:dev
-
+        image: ghcr.io/Deki60/copilot-frontend:latest
         environment:
-            - SERVER_HOST=${SERVER_HOST:-localhost} 
+            - SERVER_HOST=${SERVER_HOST:-localhost} # Set the domain name of your server
         ports:
             - "80:80"
             - "443:443"
@@ -55,7 +50,7 @@ services:
         restart: always
 
     copilot-nuclei-module:
-        image: ghcr.io/socfortress/copilot-nuclei-module:latest
+        image: ghcr.io/Deki60/copilot-nuclei-module:latest
         restart: always
 
 volumes:
@@ -64,3 +59,6 @@ volumes:
 networks:
     default:
         driver: bridge
+        # In case you need to set the MTU
+        #driver_opts:
+        #    com.docker.network.driver.mtu: "1450"
