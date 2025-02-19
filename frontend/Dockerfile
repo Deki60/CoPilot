@@ -2,7 +2,7 @@
 FROM node:21 as builder
 
 # Drop root
-USER node
+USER root
 
 # Set the working directory
 WORKDIR /app
