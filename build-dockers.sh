@@ -1,46 +1,59 @@
 #!/bin/bash
 
+# Définition du répertoire courant et de la version par défaut
 currDir=$(pwd)
-version="latest"
+version="dev"  # Utilisation de 'dev' par défaut pour refléter ta branche GitHub
 if [[ ! -z "$1" ]]; then
   version="$1"
 fi
 
-# Function to check if Docker is installed
+# Vérifier si Docker est installé
 function check_docker_installed() {
   if ! command -v docker &> /dev/null; then
-    echo "Docker could not be found. Please install Docker and try again."
+    echo "Docker n'est pas installé. Veuillez l'installer avant d'exécuter ce script."
     exit 1
   fi
 }
 
+# Build du backend avec ton fork GitHub
 function build_backend() {
-  echo ""
   echo "Build backend (version=${version})"
-  cd $currDir/backend
-  docker build . --no-cache -t socfortress/copilot-backend:${version}
+  cd "$currDir/backend" || exit
+  docker build . --no-cache -t deki60/copilot-backend:${version}
+  echo "Backend buildé avec succès !"
 }
 
+# Build du frontend avec ton fork GitHub
 function build_frontend() {
-  echo ""
-  echo "Build frontend (version=${version})"
-  cd $currDir/frontend
-  # Copy the .env.example to .env
-  cp .env.example .env
-  # Ask for the new Domain or IP address for the frontend URL
-  echo "Please enter the new Domain or IP address for the frontend URL (e.g., yourfrontenddomain.com):"
+  echo "🚀 Build frontend (version=${version})"
+  cd "$currDir/frontend" || exit
+  
+  # Copie du fichier .env.example en .env si non présent
+  if [[ ! -f .env ]]; then
+    cp .env.example .env
+  fi
+
+  # Demander l'IP ou le domaine pour le frontend
+  echo "🔹 Veuillez entrer le domaine ou l'adresse IP pour le frontend (ex: frontend.mondomaine.com) :"
   read frontendIp
-  # Replace only the IP address part in the URL
+
+  # Modification du fichier .env pour définir l'URL
   sed -i "s|0.0.0.0|${frontendIp}|g" .env
-  docker build . --no-cache -t socfortress/copilot-frontend:${version}
+
+  docker build . --no-cache -t deki60/copilot-frontend:${version}
+  echo "Frontend buildé avec succès !"
 }
 
-echo "Copilot Docker"
-echo "Version: ${version}"
+echo "🔹 Copilot Docker - Build Script"
+echo "🔹 Version cible : ${version}"
 
-# First, ensure Docker is installed
+# Vérification de l’installation de Docker
 check_docker_installed
 
-# Build processes
-#build_backend # Function not needed as SOCFortress will provide the backend but leaving in case you want to build your own
+# Exécution des builds
+build_backend
 build_frontend
+
+echo "Build terminé avec succès ! Les images sont disponibles :"
+echo "Backend : deki60/copilot-backend:${version}"
+echo "Frontend : deki60/copilot-frontend:${version}"
