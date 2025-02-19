@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  copilot-backend:
+    image: ghcr.io/deki60/copilot-backend:latest
+    ports:
+      - "5000:5000"  # Expose uniquement le port 5000 pour le développement local
+    volumes:
+      - ./data/copilot-backend-data/logs:/opt/logs
+      - ./data/data:/opt/copilot/backend/data
+      - ./backend:/app  # Synchronise le code source local avec le conteneur
+    env_file: .env
+    depends_on:
+      - copilot-mysql
+    restart: always
+
+  copilot-frontend:
+    image: ghcr.io/deki60/copilot-frontend:latest
+    environment:
+      - SERVER_HOST=localhost  # Configure le serveur pour l'environnement local
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
+
+    copilot-mysql:
+        image: mysql:8.0.38-debian
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: copilot
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+        ports:
+            - "3306:3306"
+        volumes:
+            - mysql-data:/var/lib/mysql
+        restart: always
+
+    copilot-minio:
+        image: quay.io/minio/minio:RELEASE.2024-09-13T20-26-02Z
+        environment:
+            MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+            MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        ports:
+            - "9000:9000"
+        volumes:
+            - ./data/data/minio-data:/data
+        command: server /data --console-address ":9001"
+        restart: always
+
+    copilot-nuclei-module:
+        image: ghcr.io/socfortress/copilot-nuclei-module:latest
+        restart: always
+
+volumes:
+    mysql-data:
+
+networks:
+    default:
+        driver: bridge
+        # In case you need to set the MTU
+        #driver_opts:
+        #    com.docker.network.driver.mtu: "1450"
