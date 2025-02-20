@@ -1,8 +1,8 @@
 # Use a node.js base image
-FROM node:22 as builder
+FROM node:21 as builder
 
 # Drop root
-USER root
+USER node
 
 # Set the working directory
 WORKDIR /app
