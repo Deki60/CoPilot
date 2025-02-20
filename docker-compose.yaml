@@ -1,28 +1,32 @@
-version: "3.3"
+version: "3.8"
 
 services:
   copilot-backend:
-    image: ghcr.io/deki60/copilot-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile    # Assurez-vous que ce Dockerfile est celui utilisé pour le backend
     ports:
-      - "5000:5000"  # Expose le port 5000 pour le développement
+      - "5000:5000"  # Le backend reste accessible sur le port 5000
     volumes:
       - ./data/copilot-backend-data/logs:/opt/logs
       - ./data/data:/opt/copilot/backend/data
-      - ./backend:/opt/copilot/backend   # Montre le code source backend en live
+      - ./backend:/opt/copilot/backend   # Montage du code source du backend pour modification live
     env_file: .env
     depends_on:
       - copilot-mysql
     restart: always
 
   copilot-frontend:
-    image: ghcr.io/deki60/copilot-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile    # Assurez-vous que ce Dockerfile est celui utilisé pour le frontend
     environment:
-      - SERVER_HOST=${SERVER_HOST:-localhost}  # Utilise la variable d'environnement ou "localhost" par défaut
+      - SERVER_HOST=${SERVER_HOST:-localhost}
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./frontend:/app   # Montre le code source frontend en live
+      - ./frontend:/app   # Montage du code source du frontend pour modification live
     restart: always
 
   copilot-mysql:
