@@ -1,4 +1,4 @@
-version: '3.8'
+version: "2"
 
 services:
   copilot-backend:
@@ -8,7 +8,7 @@ services:
     volumes:
       - ./data/copilot-backend-data/logs:/opt/logs
       - ./data/data:/opt/copilot/backend/data
-      - ./backend:/app  # Synchronise le code source local avec le conteneur
+      - ./backend:/opt/copilot/backend   # Montre le code source backend en live
     env_file: .env
     depends_on:
       - copilot-mysql
@@ -17,12 +17,12 @@ services:
   copilot-frontend:
     image: ghcr.io/deki60/copilot-frontend:latest
     environment:
-      - SERVER_HOST=localhost
+      - SERVER_HOST=${SERVER_HOST:-localhost}  # Domaine de votre serveur
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./frontend:/app  # Synchronise le frontend avec le conteneur
+      - ./frontend:/app   # Montre le code source frontend en live
     restart: always
 
   copilot-mysql:
@@ -36,6 +36,22 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+    restart: always
+
+  copilot-minio:
+    image: quay.io/minio/minio:RELEASE.2024-09-13T20-26-02Z
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./data/data/minio-data:/data
+    command: server /data --console-address ":9001"
+    restart: always
+
+  copilot-nuclei-module:
+    image: ghcr.io/socfortress/copilot-nuclei-module:latest
     restart: always
 
 volumes:
