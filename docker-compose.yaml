@@ -51,7 +51,7 @@ services:
     restart: always
 
   copilot-nuclei-module:
-    image: ghcr.io/deki60/copilot-nuclei-module:latest
+    image: ghcr.io/socfortress/copilot-nuclei-module:latest
     restart: always
 
 volumes:
