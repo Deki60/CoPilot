@@ -1,4 +1,4 @@
-version: "2"
+version: "3.3"
 
 services:
   copilot-backend:
@@ -17,7 +17,7 @@ services:
   copilot-frontend:
     image: ghcr.io/deki60/copilot-frontend:latest
     environment:
-      - SERVER_HOST=${SERVER_HOST:-localhost}  # Domaine de votre serveur
+      - SERVER_HOST=${SERVER_HOST:-localhost}  # Utilise la variable d'environnement ou "localhost" par défaut
     ports:
       - "80:80"
       - "443:443"
@@ -51,7 +51,7 @@ services:
     restart: always
 
   copilot-nuclei-module:
-    image: ghcr.io/socfortress/copilot-nuclei-module:latest
+    image: ghcr.io/deki60/copilot-nuclei-module:latest
     restart: always
 
 volumes:
